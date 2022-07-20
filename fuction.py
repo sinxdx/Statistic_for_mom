@@ -3,29 +3,46 @@ import os
 
 
 def 统计程序(data_raw, keywords, weight, split_list, setting):
-    data = data_raw.loc[data_raw["检查类型"] == keywords, "检查全部项目"]
+    mode = setting.S0
+    if mode == "新院区":
+        data = data_raw.loc[data_raw["检查类型"] == keywords, "检查全部项目"]
+    elif mode == "旧院区":
+        data = data_raw.loc[data_raw["设备"] == keywords, "检查部位"]
+
+    data.dropna(how="any", inplace=True)
     data.reset_index(drop=True, inplace=True)
+
+    not_statistic_items = []  # 未被统计到的单元格
+    not_statistic_words = []  # 未被统计到的字段
     cnt = 0
     for i in data.loc[:]:
-        con_block = False  # 用于统计是否有没有被统计到的单元格
-        if setting.每统计一行都输出一次 == "是":
-            print(f"——————检查项目{i}————————")
-        ls = split(i, split_list)  # ls = ["颈椎MRI平扫","腰椎MRI平扫"]
-        for ts in ls:  # ts = "颈椎MRI平扫"
-            con = False  # con == False，说明这个字段没有在对应的关键词词典里找到匹配
+        temp = False
+        # print(f"——————检查项目{i}————————")
+        ls = split(i, split_list)
+        for ts in ls:  # ts == "头颅CT平扫+增强"
+            temp2 = False
             for (key, values) in weight.items():
                 if key in ts:
-                    con = True  # 如果在关键词词典里找到了匹配，con置位为1
-                    con_block = True  # con_block也置位为1
+                    temp = True
+                    temp2 = True
                     cnt += values
-                    if setting.每统计一行都输出一次 == "是":
-                        print(f"统计到{key},其值为{values},目前统计总和为{cnt}")
+                    if setting.S2 == "是":
+                        print(f"统计到{key},其值为{values}")
                     break
-            if (setting.显示没被统计到的字段 == "是") and (not con):
-                print(f"字段  {ts}  在关键词词典里没有找到对应的字段，请确认？")
-        if (setting.显示没被统计到的单元格 == "是") and (not con_block):
-            print(f"——————单元格 {i} 没有被统计到，请确认？——————")
-    print(f"统计总和为{cnt}")
+            if not temp2 and setting.S3 == "是":
+                not_statistic_words.append(ts)
+        if not temp and setting.S4 == "是":
+            not_statistic_items.append(i)
+    if setting.S3 == "是":
+        t = set(not_statistic_words)
+        print(f'{t}未被统计到')
+        del t
+    if setting.S4 == "是":
+        t = set(not_statistic_items)
+        print(f'{t}未被统计到')
+        del t
+    print(f"文件统计总和为{cnt}")
+    return cnt
 
 
 """def  load_导出数据(path):
@@ -38,7 +55,7 @@ def load_关键词字典(path, keyword):
         keyword = input("输入你需要统计的类别(MR/CT/DR)")
     try:
         route = os.path.join(path.main_path, "关键词字典.xlsx")
-        dc_file = pd.ExcelFile(route)
+        dc_file = pd.ExcelFile(route,engine="openpyxl")
     except FileNotFoundError:
         route = raw_input("在当前文件中未找到关键词字典.xlsx，请把你的关键词字典.xlsx拖到这里来")
         dc_file = pd.ExcelFile(route)
