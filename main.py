@@ -2,8 +2,9 @@ import pandas as pd
 
 from Path import Path
 from Setting import Setting
-from fuction import 统计程序, load_统计字典, load_关键词字典, load_分隔符列表, raw_input
+from fuction import 统计程序, load_统计字典, load_关键词字典, load_分隔符列表, raw_input, traverse_xlsx
 import os
+
 path = Path()
 path.make_dir()
 setting = Setting(path)
@@ -24,18 +25,11 @@ while True:
         weight = load_统计字典(dc_raw)
         split_list = load_分隔符列表(dc_raw)
         file_path_list = []
+        cnt_all = 0
         '''读入需要统计的数据'''
-        if setting.S1 == "是":
+        if setting.S1 == "是":  # 如果设置了需要搜索多个文件，那么就进入文件夹里搜索
             try:
-                os.chdir(path.data_path)
-                for folder in os.listdir():
-                    if keyword in folder:
-                        os.chdir(folder)
-                        for file in os.listdir():
-                            if str(setting.S5) in file:  # 添加统计年份关键词，用于快速统计年份
-                                file_path_list.append(file)
-                            else:
-                                print(f"文件<{file}>中不包含“{setting.S5}”，已跳过")
+                file_path_list = traverse_xlsx(route=path.data_path, setting=setting)
             finally:
                 os.chdir(path.main_path)
         else:
@@ -43,12 +37,12 @@ while True:
         while True:
             try:
                 for file_path in file_path_list:
-                    print(f"读取文件{file_path}")
-                    file = pd.ExcelFile(file_path)
-                    data_frame = pd.read_excel(file)
-                    统计程序(data_raw=data_frame, keywords=keyword, weight=weight, split_list=split_list, setting=setting)
-                    k = input("统计完成，按下回车以继续")
-                    break
+                    print(f"统计文件{file_path}")
+                    cnt = 统计程序(file_path=file_path, keywords=keyword, weight=weight, split_list=split_list,
+                               setting=setting, path=path)
+                    cnt_all += cnt
+                print(f"以上全部的统计结果为{cnt_all}")
+                break
             except FileNotFoundError:
                 file_path = raw_input("文件读取未成功，请再次把文件拖进来")
                 continue
