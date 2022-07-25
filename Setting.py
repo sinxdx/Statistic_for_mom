@@ -15,4 +15,5 @@ class Setting:
         self.S3 = setting.loc["S3", "选择"]
         self.S4 = setting.loc["S4", "选择"]
         self.S5 = setting.loc["S5", "选择"]
+        self.S6 = setting.loc["S6", "选择"]  # keyword_enable
         print("已读取设置")

@@ -15,16 +15,34 @@ def 统计程序(file_path, keywords, weight, split_list, setting, path):
         print(f"访问被拒绝\n请关闭当前打开的文件{os.path.basename(file_path)}")
         return 0
     mode = setting.S0  # 新院区与旧院区导出程序的区别
+    keyword_enable = setting.S6
     try:
-        if mode == "旧院区":
-            data = data_raw.loc[data_raw["设备"] == keywords, "检查部位"]
-        elif mode == "新院区":
-            data = data_raw.loc[data_raw["检查类型"] == keywords, "检查全部项目"]
-        elif mode == "新院区2":
-            data = data_raw.loc[data_raw["检查类型"] == keywords, "检查项目"]
+        if keyword_enable == "使用关键词子表(MR/CT/DR/...)":
+            if mode == "旧院区":
+                data = data_raw.loc[data_raw["设备"] == keywords, ["检查部位", "姓  名"]]
+            elif mode == "新院区":
+                data = data_raw.loc[data_raw["检查类型"] == keywords, ["检查全部项目", "患者姓名"]]
+            elif mode == "新院区2":
+                data = data_raw.loc[data_raw["检查类型"] == keywords, ["检查项目", "患者姓名"]]
+        elif keyword_enable == "自行输入":
+            temp_keyword = input("输入你想要筛选出的”检查类型“的关键字")
+            if mode == "旧院区":
+                data = data_raw.loc[data_raw["设备"] == temp_keyword, ["检查部位", "姓  名"]]
+            elif mode == "新院区":
+                data = data_raw.loc[data_raw["检查类型"] == temp_keyword, ["检查全部项目", "患者姓名"]]
+            elif mode == "新院区2":
+                data = data_raw.loc[data_raw["检查类型"] == temp_keyword, ["检查项目", "患者姓名"]]
+        elif keyword_enable == "不进行筛选":
+            if mode == "旧院区":
+                data = data_raw.loc[:, ["检查部位", "姓  名"]]
+            elif mode == "新院区":
+                data = data_raw.loc[:, ["检查全部项目", "患者姓名"]]
+            elif mode == "新院区2":
+                data = data_raw.loc[:, ["检查项目", "患者姓名"]]
     except KeyError:
-        print("excel文件的设置项“统计文件导出来源”不对\n"
-              f"你当前选择的设置项是{mode}，请到《设置.xlsx》中检查一下自己的关键词表头是否选择正确")
+        print("关键词表头读取错误,检查你的文件是否正确\n"
+              f"或到《设置.xlsx》中检查一下自己的关键词表头是否选择正确\n"
+              f"你当前选择的设置项是{mode}，请到《设置.xlsx》中检查一下自己的关键词表头是否选择正确\n")
         return 0
 
     data.dropna(how="any", inplace=True)
@@ -36,8 +54,9 @@ def 统计程序(file_path, keywords, weight, split_list, setting, path):
     not_statistic_words = []  # 显示未统计到的字段
     cnt_all = 0  # 用来输出统计值
     loc = 0  # 用作指向"检查全部项目"的指针
-    for item in data.loc[:]:
+    for item in data.loc[:, ""]:
         report.loc[loc, "检查全部项目"] = item  # 报告中添加"检查全部项目"一项，其位置指针应当指向loc
+
         cnt_in_item = 0  # 单元格内的统计部位数
         loc_in_item = 0  # 字段在单元格中的位置，理论上应从1开始，使得统计时能与检查全部项目错开一格,但下面把+=1放在for循环的前面了所以还是从0开始
         item_output_flag = False  # 单元格是否被统计到的标志位

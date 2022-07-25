@@ -19,7 +19,7 @@ while True:
         exit()
     else:
         '''首先决定选择统计哪个类别'''
-        keyword = input("输入你需要统计的类别(MR/CT/DR)")
+        keyword = input("输入你想读取的关键词子表(MR/CT/DR/...)")
         '''根据统计的类别，读取关键词词典，然后读取对应的关键词和分隔符'''
         dc_raw = load_关键词字典(path, keyword)
         weight = load_统计字典(dc_raw)
@@ -44,9 +44,5 @@ while True:
                 print(f"以上全部的统计结果为{cnt_all}")
                 break
             except FileNotFoundError:
-                file_path = raw_input("文件读取未成功，请再次把文件拖进来")
-                continue
-            except KeyError:
-                print('查看这份表的表头是不是缺了“检查类型"和"检查全部项目"中的某一项\n如果是旧版的，看看是不是缺了"设备"或者"检查部位"')
-                file_path = raw_input("请重新把正确的文件拖进来")
+                file_path_list = [raw_input("文件读取未成功，请再次把文件拖进来")]
                 continue

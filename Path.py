@@ -12,3 +12,5 @@ class Path:
     def make_dir(self):
         if not os.path.exists(self.data_path):
             os.makedirs(self.data_path)
+        if not os.path.exists(self.report_path):
+            os.makedirs(self.report_path)
