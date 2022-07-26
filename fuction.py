@@ -21,42 +21,50 @@ def 统计程序(file_path, keywords, weight, split_list, setting, path):
             if mode == "旧院区":
                 data = data_raw.loc[data_raw["设备"] == keywords, ["检查部位", "姓  名"]]
             elif mode == "新院区":
-                data = data_raw.loc[data_raw["检查类型"] == keywords, ["检查全部项目", "患者姓名"]]
+                data = data_raw.loc[data_raw["检查类型"] == keywords, ["检查全部项目", "患者姓名", "登记时间"]]
             elif mode == "新院区2":
-                data = data_raw.loc[data_raw["检查类型"] == keywords, ["检查项目", "患者姓名"]]
+                data = data_raw.loc[data_raw["检查类型"] == keywords, ["检查项目", "患者姓名", "登记时间"]]
         elif keyword_enable == "自行输入":
             temp_keyword = input("输入你想要筛选出的”检查类型“的关键字")
             if mode == "旧院区":
                 data = data_raw.loc[data_raw["设备"] == temp_keyword, ["检查部位", "姓  名"]]
             elif mode == "新院区":
-                data = data_raw.loc[data_raw["检查类型"] == temp_keyword, ["检查全部项目", "患者姓名"]]
+                data = data_raw.loc[data_raw["检查类型"] == temp_keyword, ["检查全部项目", "患者姓名", "登记时间"]]
             elif mode == "新院区2":
-                data = data_raw.loc[data_raw["检查类型"] == temp_keyword, ["检查项目", "患者姓名"]]
+                data = data_raw.loc[data_raw["检查类型"] == temp_keyword, ["检查项目", "患者姓名", "登记时间"]]
         elif keyword_enable == "不进行筛选":
             if mode == "旧院区":
                 data = data_raw.loc[:, ["检查部位", "姓  名"]]
             elif mode == "新院区":
-                data = data_raw.loc[:, ["检查全部项目", "患者姓名"]]
+                data = data_raw.loc[:, ["检查全部项目", "患者姓名", "登记时间"]]
             elif mode == "新院区2":
-                data = data_raw.loc[:, ["检查项目", "患者姓名"]]
+                data = data_raw.loc[:, ["检查项目", "患者姓名", "登记时间"]]
     except KeyError:
         print("关键词表头读取错误,检查你的文件是否正确\n"
               f"或到《设置.xlsx》中检查一下自己的关键词表头是否选择正确\n"
               f"你当前选择的设置项是{mode}，请到《设置.xlsx》中检查一下自己的关键词表头是否选择正确\n")
-        return 0
+        return -1
 
     data.dropna(how="any", inplace=True)
+    try:
+        data.drop_duplicates(subset=["登记时间"], inplace=True)
+    except KeyError:
+        print("旧院区文件不能使用根据”登记时间“去重的功能”，故此文件没有进行去重")
+        pass
     data.reset_index(drop=True, inplace=True)
 
-    report = pd.DataFrame(columns=["检查全部项目", "该单元格统计出的部位数", "该单元格的字段", "字段统计明细"])
+    report = pd.DataFrame(columns=["患者姓名", "检查全部项目", "该单元格统计出的部位数", "该单元格的字段", "字段统计明细"])
 
     not_statistic_items = []  # 显示未统计到的单元格
     not_statistic_words = []  # 显示未统计到的字段
     cnt_all = 0  # 用来输出统计值
     loc = 0  # 用作指向"检查全部项目"的指针
-    for item in data.loc[:, ""]:
-        report.loc[loc, "检查全部项目"] = item  # 报告中添加"检查全部项目"一项，其位置指针应当指向loc
 
+    for row_item in data.loc[:, ["检查全部项目", "患者姓名"]].iterrows():
+        item = row_item[1]["检查全部项目"]
+        name = row_item[1]["患者姓名"]
+        report.loc[loc, "检查全部项目"] = item  # 报告中添加"检查全部项目"一项，其位置指针应当指向loc
+        report.loc[loc, "患者姓名"] = name  # 添加患者姓名
         cnt_in_item = 0  # 单元格内的统计部位数
         loc_in_item = 0  # 字段在单元格中的位置，理论上应从1开始，使得统计时能与检查全部项目错开一格,但下面把+=1放在for循环的前面了所以还是从0开始
         item_output_flag = False  # 单元格是否被统计到的标志位

@@ -25,7 +25,6 @@ while True:
         weight = load_统计字典(dc_raw)
         split_list = load_分隔符列表(dc_raw)
         file_path_list = []
-        cnt_all = 0
         '''读入需要统计的数据'''
         if setting.S1 == "是":  # 如果设置了需要搜索多个文件，那么就进入文件夹里搜索
             try:
@@ -36,10 +35,13 @@ while True:
             file_path_list = [raw_input("把你导出的数据拖进来，注意文件存放的路径中，文件夹名字不能以数字开头")]
         while True:
             try:
+                cnt_all = 0
                 for file_path in file_path_list:
                     print(f"统计文件{file_path}")
                     cnt = 统计程序(file_path=file_path, keywords=keyword, weight=weight, split_list=split_list,
                                setting=setting, path=path)
+                    if cnt == -1:
+                        break
                     cnt_all += cnt
                 print(f"以上全部的统计结果为{cnt_all}")
                 break
