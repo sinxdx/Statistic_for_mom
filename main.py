@@ -21,7 +21,7 @@ while True:
         '''首先决定选择统计哪个类别'''
         keyword = input("输入你想读取的关键词子表(MR/CT/DR/...)")
         '''根据统计的类别，读取关键词词典，然后读取对应的关键词和分隔符'''
-        dc_raw = load_关键词字典(path, keyword)
+        [dc_raw, keyword] = load_关键词字典(path, keyword)
         weight = load_统计字典(dc_raw)
         split_list = load_分隔符列表(dc_raw)
         file_path_list = []

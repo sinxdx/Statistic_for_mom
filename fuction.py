@@ -14,44 +14,47 @@ def 统计程序(file_path, keywords, weight, split_list, setting, path):
     except PermissionError:
         print(f"访问被拒绝\n请关闭当前打开的文件{os.path.basename(file_path)}")
         return 0
+
     mode = setting.S0  # 新院区与旧院区导出程序的区别
     keyword_enable = setting.S6
+    '''丢弃空值'''
+    data_raw.dropna(how="any", inplace=True)
+    '''按照时间，去重'''
+    try:
+        data_raw.drop_duplicates(subset=["登记时间"], inplace=True)
+    except KeyError:
+        print("旧院区文件不能使用根据”登记时间“去重的功能”，故此文件没有进行去重")
+        pass
+    '''选择过滤器'''
     try:
         if keyword_enable == "使用关键词子表(MR/CT/DR/...)":
             if mode == "旧院区":
                 data = data_raw.loc[data_raw["设备"] == keywords, ["检查部位", "姓  名"]]
             elif mode == "新院区":
-                data = data_raw.loc[data_raw["检查类型"] == keywords, ["检查全部项目", "患者姓名", "登记时间"]]
+                data = data_raw.loc[data_raw["检查类型"] == keywords, ["检查全部项目", "患者姓名"]]
             elif mode == "新院区2":
-                data = data_raw.loc[data_raw["检查类型"] == keywords, ["检查项目", "患者姓名", "登记时间"]]
+                data = data_raw.loc[data_raw["检查类型"] == keywords, ["检查项目", "患者姓名"]]
         elif keyword_enable == "自行输入":
             temp_keyword = input("输入你想要筛选出的”检查类型“的关键字")
             if mode == "旧院区":
                 data = data_raw.loc[data_raw["设备"] == temp_keyword, ["检查部位", "姓  名"]]
             elif mode == "新院区":
-                data = data_raw.loc[data_raw["检查类型"] == temp_keyword, ["检查全部项目", "患者姓名", "登记时间"]]
+                data = data_raw.loc[data_raw["检查类型"] == temp_keyword, ["检查全部项目", "患者姓名"]]
             elif mode == "新院区2":
-                data = data_raw.loc[data_raw["检查类型"] == temp_keyword, ["检查项目", "患者姓名", "登记时间"]]
+                data = data_raw.loc[data_raw["检查类型"] == temp_keyword, ["检查项目", "患者姓名"]]
         elif keyword_enable == "不进行筛选":
             if mode == "旧院区":
                 data = data_raw.loc[:, ["检查部位", "姓  名"]]
             elif mode == "新院区":
-                data = data_raw.loc[:, ["检查全部项目", "患者姓名", "登记时间"]]
+                data = data_raw.loc[:, ["检查全部项目", "患者姓名"]]
             elif mode == "新院区2":
-                data = data_raw.loc[:, ["检查项目", "患者姓名", "登记时间"]]
+                data = data_raw.loc[:, ["检查项目", "患者姓名"]]
+        data.reset_index(drop=True, inplace=True)
     except KeyError:
         print("关键词表头读取错误,检查你的文件是否正确\n"
               f"或到《设置.xlsx》中检查一下自己的关键词表头是否选择正确\n"
               f"你当前选择的设置项是{mode}，请到《设置.xlsx》中检查一下自己的关键词表头是否选择正确\n")
         return -1
-
-    data.dropna(how="any", inplace=True)
-    try:
-        data.drop_duplicates(subset=["登记时间"], inplace=True)
-    except KeyError:
-        print("旧院区文件不能使用根据”登记时间“去重的功能”，故此文件没有进行去重")
-        pass
-    data.reset_index(drop=True, inplace=True)
 
     report = pd.DataFrame(columns=["患者姓名", "检查全部项目", "该单元格统计出的部位数", "该单元格的字段", "字段统计明细"])
 
@@ -60,7 +63,7 @@ def 统计程序(file_path, keywords, weight, split_list, setting, path):
     cnt_all = 0  # 用来输出统计值
     loc = 0  # 用作指向"检查全部项目"的指针
 
-    for row_item in data.loc[:, ["检查全部项目", "患者姓名"]].iterrows():
+    for row_item in data.loc[:].iterrows():
         item = row_item[1]["检查全部项目"]
         name = row_item[1]["患者姓名"]
         report.loc[loc, "检查全部项目"] = item  # 报告中添加"检查全部项目"一项，其位置指针应当指向loc
@@ -126,7 +129,7 @@ def load_关键词字典(path, keyword):
         keyword = input(f"该类别{keyword}的关键词未在关键词字典中定义，请重新输入关键词，或到请到关键词词典.xlsx中对该关键词进行定义\n"
                         f"请重新重新输入类别名（CT/MR/DR...)")
     dc_raw = pd.read_excel(dc_file, sheet_name=keyword)
-    return dc_raw
+    return [dc_raw, keyword]
 
 
 def load_统计字典(dc_raw):
